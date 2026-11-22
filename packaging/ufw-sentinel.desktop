@@ -1,0 +1,17 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Centinela UFW
+Name[en]=UFW Sentinel
+GenericName=Administrador del firewall UFW
+GenericName[en]=UFW firewall manager
+Comment=Gestiona el firewall UFW de forma simple y profesional
+Comment[en]=Manage the UFW firewall simply and professionally
+Exec=ufw-sentinel
+Icon=ufw-sentinel
+Terminal=false
+StartupNotify=true
+StartupWMClass=ufw-sentinel
+Categories=Network;Utility;
+Keywords=firewall;ufw;network;security;red;seguridad;
+X-GNOME-UsesNotifications=false

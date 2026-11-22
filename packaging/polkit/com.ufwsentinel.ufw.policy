@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC
+ "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+<policyconfig>
+  <vendor>Centinela UFW (UFW Sentinel)</vendor>
+  <vendor_url>https://www.gnu.org/licenses/gpl-3.0.html</vendor_url>
+  <action id="com.ufwsentinel.ufw.manage">
+    <description>Manage the UFW firewall with UFW Sentinel</description>
+    <description xml:lang="es">Gestionar el firewall UFW con Centinela UFW</description>
+    <message>Authentication is required to manage the UFW firewall</message>
+    <message xml:lang="es">Se requiere autenticación para gestionar el firewall UFW</message>
+    <defaults>
+      <allow_any>auth_admin_keep</allow_any>
+      <allow_inactive>auth_admin_keep</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/sbin/ufw</annotate>
+    <annotate key="org.freedesktop.policykit.exec.allow_gui">true</annotate>
+  </action>
+</policyconfig>

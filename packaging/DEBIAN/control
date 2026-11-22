@@ -1,0 +1,25 @@
+Package: ufw-sentinel
+Version: 1.3.0
+Section: net
+Priority: optional
+Architecture: amd64
+Depends: ufw
+Recommends: pkexec | policykit-1 | polkitd
+Installed-Size: @INSTALLED_SIZE@
+Maintainer: Leyter Vázquez . V
+Homepage: https://www.gnu.org/licenses/gpl-3.0.html
+Description: Centinela UFW — administrador gráfico del firewall UFW
+ Administrador gráfico del firewall UFW (Uncomplicated Firewall) para
+ Linux, simple y profesional: políticas por defecto, reglas con asistente
+ y previsualización del comando, perfiles preconfigurados, perfiles de
+ aplicación, IPv6, niveles de registro (logging), modo simulación,
+ bandeja del sistema e informe de actividad exportable con borrado del
+ registro automático.
+ .
+ Escrito en Rust con egui/eframe. No requiere ejecutarse como root: los
+ comandos privilegiados se piden mediante PolicyKit (pkexec). Las
+ librerías gráficas que necesita van embebidas en /usr/lib/ufw-sentinel;
+ solo requiere ufw y las librerías básicas del escritorio (glibc 2.35+,
+ X11/Wayland y OpenGL, presentes en cualquier instalación gráfica).
+ .
+ Licencia: GNU GPL v3.

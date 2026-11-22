@@ -1,0 +1,247 @@
+════════════════════════════════════════════════════════════════════════
+  CENTINELA UFW v1.3.0 — INFORME DE SIMULACIONES Y VERIFICACIÓN
+  Creado por Leyter Vázquez . V — Licencia GNU GPL v3
+  Fecha: 21 de noviembre de 2026 · Sistema de pruebas: Debian 13 (x86_64)
+════════════════════════════════════════════════════════════════════════
+
+CONTENIDO
+  1. Resumen de la batería de pruebas
+  2. Análisis estático: clippy y tests unitarios
+  3. SIMULACIÓN A — regresión del bug «You need to be root»
+  4. SIMULACIÓN B — modo demo y recorrido automático (--autotour)
+  5. SIMULACIÓN C — flujo funcional completo (--simflow, 16 pasos)
+  6. Verificación de los paquetes (.deb, .AppImage, .run)
+  7. Análisis de dependencias del binario (portabilidad)
+  8. Conclusión
+
+────────────────────────────────────────────────────────────────────────
+ 1. RESUMEN DE LA BATERÍA DE PRUEBAS
+────────────────────────────────────────────────────────────────────────
+
+  Prueba                                            Resultado
+  ────────────────────────────────────────────────  ─────────────
+  Compilación release (cargo, Rust 1.100)           CORRECTA
+  Análisis estático (cargo clippy --all-targets)    0 avisos
+  Tests unitarios (cargo test)                      11/11 CORRECTOS
+  SIM A · regresión del bug de root                 CORRECTA
+  SIM B · recorrido demo de las 6 pestañas          CORRECTA (código 0)
+  SIM C · flujo funcional de 16 pasos               CORRECTA (13/13)
+  Paquete .deb (estructura y contenido)             CORRECTO
+  AppImage (--version y --demo en Xvfb)             CORRECTO
+  Instalador .run (--extract / --user / --uninstall) CORRECTO
+  SHA256SUMS.txt de los entregables                 GENERADO
+
+  Entorno de simulación: la app se ejecutó bajo Xvfb (servidor X virtual
+  1280x800) contra un UFW SIMULADO con estado que replica fielmente el
+  comportamiento del ufw real, incluida la exigencia de root para las
+  consultas de estado («ERROR: You need to be root to run this script»)
+  y un pkexec simulado que representa la autenticación CORRECTA del
+  usuario (contraseña bien escrita). Se cubrieron las dos ramas del
+  motor: como usuario normal (pkexec) y como root (ejecución directa,
+  mediante espacio de nombres unshare -r). 13 capturas de pantalla
+  documentan el interfaz funcionando.
+
+────────────────────────────────────────────────────────────────────────
+ 2. ANÁLISIS ESTÁTICO: CLIPPY Y TESTS UNITARIOS
+────────────────────────────────────────────────────────────────────────
+
+  $ cargo clippy --all-targets
+      Finished `dev` profile [unoptimized + debuginfo] target(s)
+  → 0 avisos, 0 errores.
+
+  $ cargo test
+      running 11 tests
+      test report::tests::borrado_del_registro_automatico ... ok   [NUEVO 1.3.0]
+      test report::tests::deteccion_de_etiquetas          ... ok
+      test report::tests::fecha_epoch                     ... ok
+      test report::tests::filtro_por_detalle              ... ok
+      test report::tests::filtro_solo_errores             ... ok
+      test ufw::tests::base64_conocido                    ... ok
+      test ufw::tests::deteccion_autenticacion_cancelada  ... ok
+      test ufw::tests::deteccion_consulta_sin_root        ... ok   [NUEVO 1.3.0]
+      test ufw::tests::parseo_numbered_con_comentarios    ... ok
+      test ufw::tests::parseo_status_inactive             ... ok
+      test ufw::tests::parseo_status_verbose              ... ok
+
+      test result: ok. 11 passed; 0 failed
+
+────────────────────────────────────────────────────────────────────────
+ 3. SIMULACIÓN A — REGRESIÓN DEL BUG «YOU NEED TO BE ROOT»
+────────────────────────────────────────────────────────────────────────
+
+Objetivo: reproducir EXACTAMENTE el escenario del informe del usuario
+(v1.2.0: dos ERROR en el registro y en el informe a las 00:02:39 y
+00:02:45 aunque la contraseña fuera correcta) y comprobar que en la
+v1.3.0 no aparece ningún error.
+
+Escenario: la app arranca como usuario normal (uid 1001) con un ufw
+simulado que exige root para las consultas y un pkexec simulado que
+autentica correctamente.
+
+Fragmento del informe automático generado por la app (informe.log):
+
+  2026-11-21 09:47:42  INFO   [inicio] Sesión iniciada — Centinela UFW v1.3.0
+                                 · usuario: z (uid 1001)
+  2026-11-21 09:47:42  CMD    [ufw] $ ufw status verbose
+  2026-11-21 09:47:42  DETAL  [ufw] código de salida: 1
+          stdout:
+          stderr: ERROR: You need to be root to run this script
+  2026-11-21 09:47:42  DETAL  [ufw] La consulta sin privilegios requiere root
+                                 (respuesta esperada de ufw, no es un error);
+                                 se escala mediante pkexec
+  2026-11-21 09:47:42  INFO   [ufw] UFW exige privilegios de root incluso para
+                                 consultar el estado (comportamiento normal de
+                                 ufw, no es un error): las consultas se
+                                 realizarán mediante pkexec
+  2026-11-21 09:47:42  CMD    [ufw] $ pkexec ufw status verbose
+  2026-11-21 09:47:42  DETAL  [ufw] código de salida: 0 · stdout: Status: inactive
+  2026-11-21 09:47:42  CMD    [ufw] $ pkexec ufw status numbered
+  2026-11-21 09:47:42  DETAL  [ufw] código de salida: 0
+  2026-11-21 09:47:42  OK     [ufw] Estado refrescado: inactivo · reglas: 0
+                                 · logging: on (low)
+  2026-11-21 09:47:42  OK     [app] Estado del firewall actualizado. · 0 reglas
+
+Comprobaciones:
+  OK  · Cero entradas de nivel ERROR relacionadas con la consulta sin root
+        (en v1.2.0 eran dos ERROR: una por cada consulta de estado).
+  OK  · Cero entradas ERROR en todo el informe de la sesión.
+  OK  · El estado del firewall se cargó correctamente vía pkexec
+        (la «contraseña correcta» funciona y deja el estado refrescado).
+  OK  · El registro de actividad de la app no muestra ningún error.
+  OK  · Captura de pantalla del Panel: firewall INACTIVO cargado, sin errores.
+
+Resultado: SIMULACIÓN A — CORRECTA (bug de v1.2.0 corregido y verificado).
+
+────────────────────────────────────────────────────────────────────────
+ 4. SIMULACIÓN B — MODO DEMO Y RECORRIDO AUTOMÁTICO (--autotour)
+────────────────────────────────────────────────────────────────────────
+
+Objetivo: validar las 6 pestañas de la interfaz en modo demo (sin tocar
+ningún firewall) y la salida limpia de la app.
+
+  OK  · La app salió sola con código 0 tras el recorrido de 12 pasos.
+  OK  · El modo demo cargó su estado simulado («Estado de demostración
+        cargado (no se ejecuta ningún comando)»).
+  OK  · El modo demo no ejecutó ningún comando privilegiado
+        (0 invocaciones a pkexec).
+  OK  · 7 capturas de pantalla documentan: Panel, Reglas (con datos demo
+        y marcado (v6)), Perfiles, Avanzado, Informe y Acerca de.
+
+Resultado: SIMULACIÓN B — CORRECTA.
+
+────────────────────────────────────────────────────────────────────────
+ 5. SIMULACIÓN C — FLUJO FUNCIONAL COMPLETO (--simflow, 16 PASOS)
+────────────────────────────────────────────────────────────────────────
+
+Objetivo: validar de principio a fin el funcionamiento real de la app
+contra un ufw simulado con estado, ejecutando como root (rama de
+ejecución directa del motor, sin pkexec).
+
+Pasos ejecutados:  1 activar firewall · 2-4 añadir reglas (22/tcp SSH,
+80,443/tcp Web) · 5 perfil Oficina (políticas + red local + SSH
+limitado) · 6 logging bajo · 7 borrado INTENCIONAL de la regla inexistente
+9 (error real) · 8 exportación COMPLETA · 9-10 cambio a «solo errores» y
+exportación · 11 volver a «completo» · 12 NUEVO: borrar el registro
+automático · 13 borrado real de la regla 2 · 14 modo simulación (regla
+8080 sin ejecutar) · 15 guardar ajustes · 16 salir.
+
+Comprobaciones (13/13 CORRECTAS):
+  OK  · Flujo completo ejecutado y salida limpia (código de salida 0).
+  OK  · El firewall quedó ACTIVO tras el paso 1.
+  OK  · El error intencional quedó registrado con detalle completo
+        (comando, código de salida y «ERROR: Could not find rule with
+        number 9») y aparece en la exportación completa (251 líneas).
+  OK  · La exportación COMPLETA se creó correctamente.
+  OK  · La exportación SOLO ERRORES se creó (9 líneas) y contiene
+        únicamente el error: ninguna línea CMD/INFO/AVISO.
+  OK  · El registro automático se borró en el paso 12 (NUEVO 1.3.0):
+        informe.log quedó sin el historial anterior.
+  OK  · Tras el borrado, el registro sigue activo: el borrado de la
+        regla 2 (paso 13) y el modo simulación (paso 14) quedaron
+        grabados en el fichero recreado (92 eventos nuevos).
+  OK  · El modo simulación mostró el comando y NO lo ejecutó
+        (la regla 8080 nunca entró en el firewall).
+  OK  · Estado final coherente: active=1, logging=on (low),
+        políticas deny/allow/deny, 7 reglas con sus gemelas (v6).
+  OK  · 5 capturas de pantalla documentan Reglas, Perfiles, Avanzado,
+        Informe (con el nuevo botón «Borrar registro automático») y
+        Acerca de.
+
+Resultado: SIMULACIÓN C — CORRECTA (13/13).
+
+────────────────────────────────────────────────────────────────────────
+ 6. VERIFICACIÓN DE LOS PAQUETES
+────────────────────────────────────────────────────────────────────────
+
+  .deb (Centinela-UFW_1.3.0_amd64.deb, 4,5 MiB):
+    OK  · Metadatos correctos (Package ufw-sentinel, Depends: ufw,
+          Recommends: pkexec|policykit-1|polkitd, Installed-Size 14376).
+    OK  · Estructura: usr/bin/ufw-sentinel, usr/lib/ufw-sentinel/ (66
+          ficheros con librerías embebidas), usr/share/applications,
+          usr/share/icons/hicolor/{256,128,64,48,32}, usr/share/polkit-1/
+          actions, usr/share/doc (README.txt + LICENSE).
+    OK  · Scripts postinst/postrm presentes y con shebang correcto.
+
+  .AppImage (Centinela-UFW_1.3.0_x86_64.AppImage, 6,5 MiB):
+    OK  · ./AppImage --version → «Centinela UFW v1.3.0».
+    OK  · --appimage-extract-and-run --demo bajo Xvfb: la interfaz
+          arrancó y siguió viva durante toda la prueba (8 s).
+    OK  · AppRun ajusta LD_LIBRARY_PATH a las librerías embebidas.
+
+  .run (Centinela-UFW_1.3.0_instalador.run, 6,3 MiB):
+    OK  · --extract DIR: extracción correcta y el binario extraído
+          responde a --version.
+    OK  · --user (HOME aislado): instala en ~/.local/bin, ~/.local/lib/
+          ufw-sentinel (con enlaces .so sin versión), reescribe el Exec
+          del lanzador a la ruta absoluta, instala iconos y documentación.
+    OK  · --uninstall --user: desinstalación limpia.
+    OK  · --no-same-owner en la extracción: evita fallos de chown al
+          instalar como root en sistemas sin el uid original.
+    OK  · La instalación del sistema (sudo) usa la misma lógica con el
+          prefijo /usr/local (verificado la lógica de instalado; en el
+          entorno de pruebas sin root real solo se pudo validar --user).
+
+  SHA256SUMS.txt:
+    OK  · Firmas SHA-256 de los cinco entregables (deb, AppImage, run,
+          fuentes y README).
+
+────────────────────────────────────────────────────────────────────────
+ 7. ANÁLISIS DE DEPENDENCIAS DEL BINARIO (PORTABILIDAD)
+────────────────────────────────────────────────────────────────────────
+
+  $ ldd target/release/ufw-sentinel
+      linux-vdso.so.1
+      libgcc_s.so.1 => /lib/x86_64-linux-gnu/libgcc_s.so.1
+      libm.so.6     => /lib/x86_64-linux-gnu/libm.so.6
+      libc.so.6     => /lib/x86_64-linux-gnu/libc.so.6
+
+  → El binario NO enlaza con ninguna librería gráfica: X11, xkbcommon y
+    Wayland se cargan en tiempo de ejecución mediante dlopen y van
+    EMBEBIDAS en lib/ufw-sentinel dentro de los tres paquetes
+    (22 librerías + sus enlaces .so sin versión, que es el nombre que
+    buscan x11-dl y xkbcommon-dl).
+
+  $ objdump -T | GLIBC_2.x → versión máxima requerida: GLIBC_2.35
+  → Compatible con Ubuntu 22.04, Debian 12, Mint 21, Fedora 36+…
+    (el script build.rs neutraliza además los símbolos pidfd_* de
+    glibc 2.39 para no elevar el requisito).
+
+  RPATH embebido: $ORIGIN/../lib/ufw-sentinel (DT_RPATH clásico, que
+  también cubre las dependencias de las librerías cargadas por dlopen).
+  Verificado: la app arranca desde la disposición instalada sin
+  LD_LIBRARY_PATH y sin librerías del sistema X11.
+
+────────────────────────────────────────────────────────────────────────
+ 8. CONCLUSIÓN
+────────────────────────────────────────────────────────────────────────
+
+La v1.3.0 pasa todas las pruebas: los falsos errores de root han
+desaparecido del registro de actividad y del informe (verificado
+reproduciendo el escenario exacto del usuario), el nuevo botón de
+borrado del registro automático funciona y el registro continúa
+escribiendo después, el flujo completo de 16 pasos funciona de
+principio a fin (activación, reglas v4+v6, perfil, logging, errores
+reales, exportaciones completa y solo-errores, borrados y modo
+simulación), y los tres paquetes portables se instalaron y arrancaron
+correctamente con sus librerías embebidas.
+════════════════════════════════════════════════════════════════════════

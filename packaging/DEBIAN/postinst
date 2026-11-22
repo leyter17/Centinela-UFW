@@ -1,0 +1,23 @@
+#!/bin/sh
+# Postinstalación del paquete deb de Centinela UFW (ufw-sentinel).
+set -e
+
+# Actualizar cachés de menús e iconos si las herramientas existen
+if command -v update-desktop-database >/dev/null 2>&1; then
+    update-desktop-database /usr/share/applications 2>/dev/null || true
+fi
+if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+    gtk-update-icon-cache -f /usr/share/icons/hicolor 2>/dev/null || true
+fi
+
+cat <<RESUMEN
+
+  Centinela UFW @VER@ instalado correctamente.
+    · Aplicación:  menú «Centinela UFW» o comando: ufw-sentinel
+    · Librerías embebidas: /usr/lib/ufw-sentinel (sin dependencias extra)
+    · Informe automático:  ~/.local/share/ufw-sentinel/informe.log
+    · Configuración:       ~/.config/ufw-sentinel/config.json
+  Desinstalar con:  sudo apt remove ufw-sentinel
+
+RESUMEN
+exit 0

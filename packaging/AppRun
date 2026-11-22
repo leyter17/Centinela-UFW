@@ -1,0 +1,7 @@
+#!/bin/sh
+# AppRun del AppImage de Centinela UFW.
+# Prepara el entorno y lanza el binario real con las librerías embebidas.
+HERE="$(dirname "$(readlink -f "$0")")"
+export LD_LIBRARY_PATH="$HERE/usr/lib/ufw-sentinel${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+export APPDIR="$HERE"
+exec "$HERE/usr/bin/ufw-sentinel" "$@"
