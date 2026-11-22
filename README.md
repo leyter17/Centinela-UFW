@@ -2,6 +2,7 @@
 Administrador gráfico del firewall UFW para Linux
 
 ════════════════════════════════════════════════════════════════════════
+  
   CENTINELA UFW  ·  UFW SENTINEL  ·  versión 1.3.0
   Administrador gráfico del firewall UFW para Linux
 ════════════════════════════════════════════════════════════════════════
