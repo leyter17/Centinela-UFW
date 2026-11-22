@@ -5,6 +5,7 @@ Administrador gráfico del firewall UFW para Linux
   CENTINELA UFW  ·  UFW SENTINEL  ·  versión 1.3.0
   Administrador gráfico del firewall UFW para Linux
 ════════════════════════════════════════════════════════════════════════
+
 SI TE GUSTA ESTE PROYECTO POR FAVOR DEJA UNA DONACION EN BITCOIN A ESTA DIRECCION: bc1qac0vp996wqaq8z2gujyzcg7699lcmmtul8e8qtrkqdk4pg48wq8s3nj8hh
 
 Fecha de esta versión: 21 de noviembre de 2026
