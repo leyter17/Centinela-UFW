@@ -3,7 +3,7 @@ Administrador gráfico del firewall UFW para Linux
 
 ════════════════════════════════════════════════════════════════════════
 
-SI TE GUSTA ESTE PROYECTO POR FAVOR DEJA UNA DONACION EN BITCOIN A ESTA DIRECCION: bc1qac0vp996wqaq8z2gujyzcg7699lcmmtul8e8qtrkqdk4pg48wq8s3nj8hh
+SI TE GUSTA ESTE PROYECTO Y QUIERES AYUDARNOS A SEGUIR DESARROLLANDO POR FAVOR DEJA UNA DONACION EN BITCOIN A ESTA DIRECCION: bc1qac0vp996wqaq8z2gujyzcg7699lcmmtul8e8qtrkqdk4pg48wq8s3nj8hh
 
 ────────────────────────────────────────────────────────────────────────
  1. ¿QUÉ ES ESTA APP?
